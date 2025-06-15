@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Poppins', 'Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
         primary: {
@@ -13,11 +13,11 @@ export default {
           200: '#bbf7d0',
           300: '#86efac',
           400: '#4ade80',
-          500: '#00FF84',
+          500: '#00FF84', // merged primary green
           600: '#00C97F',
           700: '#1DBE6A',
-          800: '#166534',
-          900: '#14532d',
+          800: '#065f46',
+          900: '#064e3b',
         },
         dark: {
           900: '#0D0D0D',
@@ -34,7 +34,11 @@ export default {
       animation: {
         'fade-in': 'fadeIn 0.6s ease-out',
         'slide-up': 'slideUp 0.6s ease-out',
-        'float': 'float 3s ease-in-out infinite',
+        'float': 'float 6s ease-in-out infinite',
+        'glow': 'glow 2s ease-in-out infinite alternate',
+        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'bounce-slow': 'bounce 3s infinite',
+        'spin-slow': 'spin 8s linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -47,8 +51,15 @@ export default {
         },
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-10px)' },
+          '50%': { transform: 'translateY(-20px)' }, // use deeper float
+        },
+        glow: {
+          '0%': { boxShadow: '0 0 20px #00FF84' },
+          '100%': { boxShadow: '0 0 40px #00FF84, 0 0 60px #00FF84' },
         }
+      },
+      backdropBlur: {
+        xs: '2px',
       }
     },
   },
