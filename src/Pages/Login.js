@@ -8,7 +8,7 @@ import {
   signInWithRedirect
 } from 'firebase/auth';
 import { auth, googleProvider, githubProvider } from '../firebaseconfig';
-
+//login
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
