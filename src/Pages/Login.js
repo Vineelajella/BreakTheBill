@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Github, Chrome, DollarSign } from 'lucide-react';
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Github,
+  Chrome,
+  DollarSign,
+} from 'lucide-react';
 import AuthLayout from '../Components/AuthLayout';
 import {
   signInWithEmailAndPassword,
@@ -8,12 +16,14 @@ import {
   signInWithRedirect,
 } from 'firebase/auth';
 import { auth, googleProvider, githubProvider } from '../firebaseconfig';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
-  const [loadingProvider, setLoadingProvider] = useState(null); // Track which provider is loading
+  const [loadingProvider, setLoadingProvider] = useState(null);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -25,61 +35,73 @@ const Login = () => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      navigate('/home');
+      toast.success('Login successful!');
+      setTimeout(() => navigate('/home'), 1500);
     } catch (error) {
-      alert(error.message);
+      let message = 'Invalid credentials.';
+      if (
+        error.code === 'auth/wrong-password' ||
+        error.code === 'auth/user-not-found'
+      ) {
+        message = 'Invalid credentials.';
+      } else if (error.code === 'auth/invalid-email') {
+        message = 'Invalid email address.';
+      }
+      toast.error(message, {
+        icon: () => <span className="text-red-500 text-lg">❌</span>,
+      });
     }
   };
 
-const handleGoogleSignIn = async () => {
-  if (loadingProvider) return;
-  setLoadingProvider('google');
+  const handleGoogleSignIn = async () => {
+    if (loadingProvider) return;
+    setLoadingProvider('google');
 
-  try {
-    // Ensure popup is not pending from another request
-    await signInWithPopup(auth, googleProvider);
-    navigate('/home');
-  } catch (error) {
-    if (error.code === 'auth/popup-blocked') {
-      try {
-        await signInWithRedirect(auth, googleProvider);
-      } catch (redirectError) {
-        alert(redirectError.message);
+    try {
+      await signInWithPopup(auth, googleProvider);
+      toast.success('Signed in with Google!');
+      setTimeout(() => navigate('/home'), 1500);
+    } catch (error) {
+      if (error.code === 'auth/popup-blocked') {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+        } catch (redirectError) {
+          toast.error(redirectError.message);
+        }
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        console.warn('Cancelled previous popup request');
+      } else {
+        toast.error(error.message);
       }
-    } else if (error.code === 'auth/cancelled-popup-request') {
-      // Ignore silently — Firebase cancels previous popup automatically
-      console.warn('Cancelled previous popup request');
-    } else {
-      alert(error.message);
+    } finally {
+      setTimeout(() => setLoadingProvider(null), 500);
     }
-  } finally {
-    setTimeout(() => setLoadingProvider(null), 500); // Slight delay helps with stability
-  }
-};
+  };
 
-const handleGithubSignIn = async () => {
-  if (loadingProvider) return;
-  setLoadingProvider('github');
+  const handleGithubSignIn = async () => {
+    if (loadingProvider) return;
+    setLoadingProvider('github');
 
-  try {
-    await signInWithPopup(auth, githubProvider);
-    navigate('/home');
-  } catch (error) {
-    if (error.code === 'auth/popup-blocked') {
-      try {
-        await signInWithRedirect(auth, githubProvider);
-      } catch (redirectError) {
-        alert(redirectError.message);
+    try {
+      await signInWithPopup(auth, githubProvider);
+      toast.success('Signed in with GitHub!');
+      setTimeout(() => navigate('/home'), 1500);
+    } catch (error) {
+      if (error.code === 'auth/popup-blocked') {
+        try {
+          await signInWithRedirect(auth, githubProvider);
+        } catch (redirectError) {
+          toast.error(redirectError.message);
+        }
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        console.warn('Cancelled previous popup request');
+      } else {
+        toast.error(error.message);
       }
-    } else if (error.code === 'auth/cancelled-popup-request') {
-      console.warn('Cancelled previous popup request');
-    } else {
-      alert(error.message);
+    } finally {
+      setTimeout(() => setLoadingProvider(null), 500);
     }
-  } finally {
-    setTimeout(() => setLoadingProvider(null), 500);
-  }
-};
+  };
 
   const welcomeContent = (
     <div className="text-center lg:text-left animate-fade-in">
@@ -89,7 +111,9 @@ const handleGithubSignIn = async () => {
         </div>
         <h1 className="text-3xl font-bold text-white ml-3">Break The Bill</h1>
       </div>
-      <h2 className="text-2xl lg:text-3xl font-semibold text-white mb-4">Welcome Back!</h2>
+      <h2 className="text-2xl lg:text-3xl font-semibold text-white mb-4">
+        Welcome Back!
+      </h2>
       <p className="text-dark-100 text-lg leading-relaxed">
         Ready to split expenses with your friends? Sign in to your account and continue managing your group expenses effortlessly.
       </p>
@@ -169,7 +193,6 @@ const handleGithubSignIn = async () => {
           </label>
         </div>
 
-        {/* Options */}
         <div className="flex items-center justify-between">
           <label className="flex items-center">
             <input type="checkbox" className="w-4 h-4 text-primary-500 bg-dark-800 border-dark-600 rounded" />
@@ -180,7 +203,6 @@ const handleGithubSignIn = async () => {
           </Link>
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           className="w-full bg-gradient-to-r from-primary-500 to-primary-700 text-dark-900 font-semibold py-3 px-6 rounded-xl hover:from-primary-400 hover:to-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 shadow-lg"
@@ -188,7 +210,6 @@ const handleGithubSignIn = async () => {
           Sign In
         </button>
 
-        {/* Divider */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-dark-600" />
@@ -198,7 +219,6 @@ const handleGithubSignIn = async () => {
           </div>
         </div>
 
-        {/* Social Logins */}
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
@@ -224,7 +244,6 @@ const handleGithubSignIn = async () => {
           </button>
         </div>
 
-        {/* Signup Prompt */}
         <p className="text-center text-dark-300">
           Don't have an account?{' '}
           <Link to="/signup" className="text-primary-500 hover:text-primary-400 font-medium">
@@ -235,7 +254,12 @@ const handleGithubSignIn = async () => {
     </div>
   );
 
-  return <AuthLayout welcomeContent={welcomeContent} formContent={formContent} />;
+  return (
+    <>
+      <AuthLayout welcomeContent={welcomeContent} formContent={formContent} />
+      <ToastContainer position="top-center" autoClose={3000} />
+    </>
+  );
 };
 
 export default Login;

@@ -18,6 +18,7 @@ import {
   signInWithRedirect
 } from 'firebase/auth';
 import { auth, googleProvider, githubProvider } from '../firebaseconfig';
+import { toast, Toaster } from 'react-hot-toast';
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -43,15 +44,16 @@ const SignUp = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match!');
+      toast.error('Passwords do not match!');
       return;
     }
     try {
       setLoading(true);
       await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      navigate('/home');
+      toast.success('Account created successfully!');
+      setTimeout(() => navigate('/home'), 1500);
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -62,16 +64,17 @@ const SignUp = () => {
     try {
       setLoading(true);
       await signInWithPopup(auth, googleProvider);
-      navigate('/home');
+      toast.success('Signed in with Google!');
+       setTimeout(() => navigate('/home'), 1500);
     } catch (error) {
       if (error.code === 'auth/popup-blocked') {
         try {
           await signInWithRedirect(auth, googleProvider);
         } catch (redirectError) {
-          alert(redirectError.message);
+          toast.error(redirectError.message);
         }
       } else if (error.code !== 'auth/cancelled-popup-request') {
-        alert(error.message);
+        toast.error(error.message);
       }
     } finally {
       setLoading(false);
@@ -83,16 +86,17 @@ const SignUp = () => {
     try {
       setLoading(true);
       await signInWithPopup(auth, githubProvider);
-      navigate('/home');
+      toast.success('Signed in with GitHub!');
+     setTimeout(() => navigate('/home'), 1500);
     } catch (error) {
       if (error.code === 'auth/popup-blocked') {
         try {
           await signInWithRedirect(auth, githubProvider);
         } catch (redirectError) {
-          alert(redirectError.message);
+          toast.error(redirectError.message);
         }
       } else if (error.code !== 'auth/cancelled-popup-request') {
-        alert(error.message);
+        toast.error(error.message);
       }
     } finally {
       setLoading(false);
@@ -136,13 +140,13 @@ const SignUp = () => {
 
   const formContent = (
     <div className="animate-slide-up">
+      <Toaster position="top-center" />
       <div className="text-center mb-8">
         <h3 className="text-2xl font-semibold text-white mb-2">Create Account</h3>
         <p className="text-dark-200">Start managing expenses with your group</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Name */}
         <InputField
           icon={User}
           name="name"
@@ -152,8 +156,6 @@ const SignUp = () => {
           setFocusedField={setFocusedField}
           placeholder="Enter your full name"
         />
-
-        {/* Email */}
         <InputField
           icon={Mail}
           name="email"
@@ -164,8 +166,6 @@ const SignUp = () => {
           setFocusedField={setFocusedField}
           placeholder="Enter your email"
         />
-
-        {/* Password */}
         <InputField
           icon={Lock}
           name="password"
@@ -179,8 +179,6 @@ const SignUp = () => {
           toggleValue={showPassword}
           onToggle={() => setShowPassword(!showPassword)}
         />
-
-        {/* Confirm Password */}
         <InputField
           icon={Lock}
           name="confirmPassword"
@@ -196,8 +194,6 @@ const SignUp = () => {
           showCheck={formData.confirmPassword && passwordsMatch}
           error={!passwordsMatch && formData.confirmPassword}
         />
-
-        {/* Terms */}
         <div className="flex items-center">
           <input
             type="checkbox"
@@ -212,8 +208,6 @@ const SignUp = () => {
             <Link to="/privacy" className="text-primary-500 hover:text-primary-400">Privacy Policy</Link>
           </label>
         </div>
-
-        {/* Submit */}
         <button
           type="submit"
           disabled={loading}
@@ -226,7 +220,6 @@ const SignUp = () => {
           {loading ? 'Creating Account...' : 'Create Account'}
         </button>
 
-        {/* Divider */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-dark-600" />
@@ -236,7 +229,6 @@ const SignUp = () => {
           </div>
         </div>
 
-        {/* Social */}
         <div className="grid grid-cols-2 gap-3">
           <SocialButton
             onClick={handleGoogleSignUp}
@@ -265,7 +257,6 @@ const SignUp = () => {
   return <AuthLayout welcomeContent={welcomeContent} formContent={formContent} />;
 };
 
-// Reusable InputField
 const InputField = ({
   icon: Icon,
   name,
@@ -317,7 +308,6 @@ const InputField = ({
   );
 };
 
-// Reusable Social Button
 const SocialButton = ({ onClick, icon, label, loading }) => (
   <button
     type="button"
