@@ -126,12 +126,13 @@ const ExpenseDetails = () => {
         onBack={() => navigate(`/groups/${groupId}`)}
       />
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main content with proper spacing to account for sticky header */}
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="space-y-8"
+          className="space-y-6"
         >
           <ExpenseInfoCard expense={expense} />
           
