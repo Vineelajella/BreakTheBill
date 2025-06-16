@@ -55,8 +55,8 @@ const HeroSection = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.6 }}
                     >
-                        <Button variant="primary" size="large" onClick={() => navigate('/signup')}>
-                            Get Started
+                        <Button variant="primary" size="large" onClick={() => navigate('/groups')}>
+                            My Groups
                         </Button>
                     </motion.div>
                 </motion.div>
