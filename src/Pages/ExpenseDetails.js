@@ -1,24 +1,7 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowLeft, 
-  Receipt, 
-  Calendar, 
-  Tag, 
-  User, 
-  Users, 
-  Edit3, 
-  Trash2, 
-  Download, 
-  ZoomIn,
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Eye,
-  Share2
-} from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
+
 import ExpenseHeader from '../Components/ExpenseDetails/ExpenseHeader';
 import ExpenseInfoCard from '../Components/ExpenseDetails/ExpenseInfoCard';
 import DescriptionSection from '../Components/ExpenseDetails/DescriptionSection';
@@ -95,23 +78,21 @@ const ExpenseDetails = () => {
   const group = {
     id: groupId,
     name: "Goa Trip 2025",
-    role: "Owner" // Current user's role
+    role: "Owner"
   };
 
-  const canEdit = group.role === "Owner" || expense.createdBy.id === 1; // Current user ID
+  const canEdit = group.role === "Owner" || expense.createdBy.id === 1;
 
   const handleEdit = () => {
     navigate(`/groups/${groupId}/expenses/${expenseId}/edit`);
   };
 
   const handleDelete = () => {
-    // Delete logic here
     setShowDeleteModal(false);
     navigate(`/groups/${groupId}`);
   };
 
   const handleDownloadReceipt = () => {
-    // Download receipt logic
     const link = document.createElement('a');
     link.href = expense.receipt.url;
     link.download = expense.receipt.filename;
@@ -120,13 +101,12 @@ const ExpenseDetails = () => {
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white">
-      <ExpenseHeader 
+      <ExpenseHeader
         expense={expense}
         group={group}
         onBack={() => navigate(`/groups/${groupId}`)}
       />
 
-      {/* Main content with proper spacing to account for sticky header */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -135,40 +115,39 @@ const ExpenseDetails = () => {
           className="space-y-6"
         >
           <ExpenseInfoCard expense={expense} />
-          
+
           {expense.description && (
             <DescriptionSection description={expense.description} />
           )}
-          
+
           {expense.receipt && (
-            <ReceiptSection 
+            <ReceiptSection
               receipt={expense.receipt}
               onView={() => setShowReceiptModal(true)}
               onDownload={handleDownloadReceipt}
             />
           )}
-          
+
           {canEdit && (
-            <ActionButtons 
+            <ActionButtons
               onEdit={handleEdit}
               onDelete={() => setShowDeleteModal(true)}
             />
           )}
-          
+
           <AuditTrail auditTrail={expense.auditTrail} />
         </motion.div>
       </main>
 
-      {/* Modals */}
-      <DeleteExpenseModal 
+      <DeleteExpenseModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDelete}
         expenseTitle={expense.title}
       />
-      
+
       {expense.receipt && (
-        <ReceiptModal 
+        <ReceiptModal
           isOpen={showReceiptModal}
           onClose={() => setShowReceiptModal(false)}
           receipt={expense.receipt}

@@ -1,3 +1,5 @@
+// add expense modal component
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Receipt, Upload, Plus, Minus, DollarSign } from 'lucide-react';

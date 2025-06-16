@@ -1,3 +1,5 @@
+// expense header component
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Receipt, Calendar, Tag, User } from 'lucide-react';
