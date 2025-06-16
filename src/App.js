@@ -6,6 +6,7 @@ import Login from './Pages/Login';
 import HomePage from './Pages/HomePage';
 import Groups from './Pages/Groups';
 import GroupOverview from './Pages/GroupOverview';
+import ExpenseDetails from './Pages/ExpenseDetails';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/home" element={<HomePage />} />
           <Route path="/groups" element={<Groups />} />
           <Route path="/groups/:groupId" element={<GroupOverview />} />
+          <Route path="/groups/:groupId/expenses/:expenseId" element={<ExpenseDetails />} />
         </Routes>
       </div>
     </Router>
