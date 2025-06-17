@@ -1,23 +1,44 @@
-// add expense modal component
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Receipt, Upload, Plus, Minus, DollarSign } from 'lucide-react';
+import { X, Receipt, Upload, Save, Trash2, DollarSign } from 'lucide-react';
 
-const AddExpenseModal = ({ isOpen, onClose, groupMembers, onSubmit }) => {
+const EditExpenseModal = ({ isOpen, onClose, expense, groupMembers, onSubmit, onDelete }) => {
   const [formData, setFormData] = useState({
     title: '',
     amount: '',
-    paidBy: groupMembers?.[0]?.id.toString() || '',
+    paidBy: '',
     category: 'Food',
-    date: new Date().toISOString().split('T')[0],
+    date: '',
     description: '',
     splitType: 'equal',
-    participants: groupMembers?.map(m => ({ ...m, selected: true, amount: 0 })) || []
+    participants: []
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const categories = ['Food', 'Transport', 'Accommodation', 'Entertainment', 'Shopping', 'Other'];
+
+  useEffect(() => {
+    if (expense && groupMembers) {
+      setFormData({
+        title: expense.title || '',
+        amount: expense.amount || '',
+        paidBy: expense.paidById?.toString() || '',
+        category: expense.category || 'Food',
+        date: expense.date || '',
+        description: expense.description || '',
+        splitType: expense.splitType || 'equal',
+        participants: groupMembers.map(member => {
+          const existingParticipant = expense.participants?.find(p => p.id === member.id);
+          return {
+            ...member,
+            selected: !!existingParticipant,
+            amount: existingParticipant?.amount || 0
+          };
+        })
+      });
+    }
+  }, [expense, groupMembers]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,34 +48,23 @@ const AddExpenseModal = ({ isOpen, onClose, groupMembers, onSubmit }) => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     onSubmit(formData);
-    
-    // Reset form
-    setFormData({
-      title: '',
-      amount: '',
-      paidBy: groupMembers?.[0]?.id.toString() || '',
-      category: 'Food',
-      date: new Date().toISOString().split('T')[0],
-      description: '',
-      splitType: 'equal',
-      participants: groupMembers?.map(m => ({ ...m, selected: true, amount: 0 })) || []
-    });
     setIsSubmitting(false);
+  };
+
+  const handleDelete = async () => {
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    onDelete(expense.id);
+    setIsSubmitting(false);
+    onClose();
   };
 
   const handleClose = () => {
     if (!isSubmitting) {
-      // Reset form on close
-      setFormData({
-        title: '',
-        amount: '',
-        paidBy: groupMembers?.[0]?.id.toString() || '',
-        category: 'Food',
-        date: new Date().toISOString().split('T')[0],
-        description: '',
-        splitType: 'equal',
-        participants: groupMembers?.map(m => ({ ...m, selected: true, amount: 0 })) || []
-      });
+      setShowDeleteConfirm(false);
       onClose();
     }
   };
@@ -70,6 +80,8 @@ const AddExpenseModal = ({ isOpen, onClose, groupMembers, onSubmit }) => {
 
   const selectedParticipants = formData.participants.filter(p => p.selected);
   const amountPerPerson = formData.amount ? Math.round(formData.amount / selectedParticipants.length) : 0;
+
+  if (!expense) return null;
 
   return (
     <AnimatePresence>
@@ -95,7 +107,7 @@ const AddExpenseModal = ({ isOpen, onClose, groupMembers, onSubmit }) => {
                 <div className="w-10 h-10 bg-gradient-to-r from-[#00FF84] to-[#00C97F] rounded-full flex items-center justify-center mr-3">
                   <Receipt className="w-5 h-5 text-black" />
                 </div>
-                <h2 className="text-xl font-semibold text-white">Add Expense</h2>
+                <h2 className="text-xl font-semibold text-white">Edit Expense</h2>
               </div>
               <button
                 onClick={handleClose}
@@ -270,23 +282,74 @@ const AddExpenseModal = ({ isOpen, onClose, groupMembers, onSubmit }) => {
                 >
                   Cancel
                 </button>
-                <motion.button
-                  type="submit"
-                  disabled={!formData.title || !formData.amount || selectedParticipants.length === 0 || isSubmitting}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-[#00FF84] to-[#00C97F] text-black font-semibold rounded-xl hover:shadow-lg hover:shadow-[#00FF84]/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                  whileHover={!isSubmitting ? { scale: 1.02 } : {}}
-                  whileTap={!isSubmitting ? { scale: 0.98 } : {}}
-                >
-                  {isSubmitting ? (
-                    <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Expense
-                    </>
-                  )}
-                </motion.button>
+                
+                {!showDeleteConfirm ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      disabled={isSubmitting}
+                      className="px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    
+                    <motion.button
+                      type="submit"
+                      disabled={!formData.title || !formData.amount || selectedParticipants.length === 0 || isSubmitting}
+                      className="flex-1 px-4 py-3 bg-gradient-to-r from-[#00FF84] to-[#00C97F] text-black font-semibold rounded-xl hover:shadow-lg hover:shadow-[#00FF84]/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      whileHover={!isSubmitting ? { scale: 1.02 } : {}}
+                      whileTap={!isSubmitting ? { scale: 0.98 } : {}}
+                    >
+                      {isSubmitting ? (
+                        <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          Save Changes
+                        </>
+                      )}
+                    </motion.button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteConfirm(false)}
+                      disabled={isSubmitting}
+                      className="flex-1 px-4 py-3 bg-gray-700 text-gray-300 rounded-xl hover:bg-gray-600 transition-colors disabled:opacity-50"
+                    >
+                      Keep Expense
+                    </button>
+                    
+                    <motion.button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={isSubmitting}
+                      className="flex-1 px-4 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      whileHover={!isSubmitting ? { scale: 1.02 } : {}}
+                      whileTap={!isSubmitting ? { scale: 0.98 } : {}}
+                    >
+                      {isSubmitting ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete Expense
+                        </>
+                      )}
+                    </motion.button>
+                  </>
+                )}
               </div>
+              
+              {showDeleteConfirm && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                  <p className="text-red-400 text-sm text-center">
+                    ⚠️ Are you sure you want to delete this expense? This action cannot be undone.
+                  </p>
+                </div>
+              )}
             </form>
           </motion.div>
         </div>
@@ -295,4 +358,4 @@ const AddExpenseModal = ({ isOpen, onClose, groupMembers, onSubmit }) => {
   );
 };
 
-export default AddExpenseModal;
+export default EditExpenseModal;

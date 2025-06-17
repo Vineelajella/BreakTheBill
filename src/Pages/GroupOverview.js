@@ -26,7 +26,8 @@ import {
   TrendingUp,
   TrendingDown,
   Eye,
-  DollarSign
+  DollarSign,
+  Edit3
 } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AddExpenseModal from '../Components/AddExpenseModal';
@@ -36,6 +37,8 @@ import InviteMemberModal from '../Components/InviteMemberModal';
 import KickMemberModal from '../Components/KickMemberModal';
 import TransferOwnershipModal from '../Components/TransferOwnershipModal';
 import DeleteGroupModal from '../Components/DeleteGroupModal';
+import EditExpenseModal from '../Components/EditExpenseModal';
+import { toast } from 'react-toastify';
 
 const GroupOverview = () => {
   const { groupId } = useParams();
@@ -46,6 +49,7 @@ const GroupOverview = () => {
   const [filterMember, setFilterMember] = useState('All');
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
   const [showExpenseDetailModal, setShowExpenseDetailModal] = useState(false);
+  const [showEditExpenseModal, setShowEditExpenseModal] = useState(false);
   const [showSettleUpModal, setShowSettleUpModal] = useState(false);
   const [showInviteMemberModal, setShowInviteMemberModal] = useState(false);
   const [showKickMemberModal, setShowKickMemberModal] = useState(false);
@@ -72,44 +76,40 @@ const GroupOverview = () => {
     ]
   };
 
-  const expenses = [
+  const [expenses, setExpenses] = useState([
     {
       id: 1,
       title: "Hotel Booking - Taj Resort",
       amount: 12000,
       paidBy: "You",
+      paidById: 1,
       splitBetween: 6,
       category: "Accommodation",
       date: "2025-01-15",
       description: "3 nights stay at Taj Resort, Goa",
-      participants: group.members,
-      receipt: null
+      participants: group.members.map(m => ({ ...m, selected: true, amount: 2000 })),
+      receipt: null,
+      splitType: 'equal',
+      createdAt: new Date().toISOString(),
+      createdBy: { id: 1, name: "You", avatar: "Y" }
     },
     {
       id: 2,
       title: "Flight Tickets",
       amount: 8400,
       paidBy: "Priya Sharma",
+      paidById: 2,
       splitBetween: 6,
       category: "Transport",
       date: "2025-01-14",
       description: "Round trip flights for all members",
-      participants: group.members,
-      receipt: null
-    },
-    {
-      id: 3,
-      title: "Dinner at Beach Shack",
-      amount: 2400,
-      paidBy: "Arjun Patel",
-      splitBetween: 6,
-      category: "Food",
-      date: "2025-01-13",
-      description: "Seafood dinner with drinks",
-      participants: group.members,
-      receipt: null
+      participants: group.members.map(m => ({ ...m, selected: true, amount: 1400 })),
+      receipt: null,
+      splitType: 'equal',
+      createdAt: new Date().toISOString(),
+      createdBy: { id: 2, name: "Priya Sharma", avatar: "P" }
     }
-  ];
+  ]);
 
   const categories = ['All', 'Food', 'Transport', 'Accommodation', 'Entertainment', 'Shopping', 'Other'];
 
@@ -127,9 +127,74 @@ const GroupOverview = () => {
     ...(group.role === 'Owner' ? [{ id: 'admin', label: 'Admin', icon: Settings }] : [])
   ];
 
+  const handleAddExpense = (expenseData) => {
+    const newExpense = {
+      id: Date.now(),
+      title: expenseData.title,
+      amount: parseFloat(expenseData.amount),
+      paidBy: group.members.find(m => m.id.toString() === expenseData.paidBy)?.name || "You",
+      paidById: parseInt(expenseData.paidBy),
+      splitBetween: expenseData.participants.filter(p => p.selected).length,
+      category: expenseData.category,
+      date: expenseData.date,
+      description: expenseData.description,
+      participants: expenseData.participants.filter(p => p.selected).map(p => ({
+        ...p,
+        amount: expenseData.splitType === 'equal' 
+          ? Math.round(parseFloat(expenseData.amount) / expenseData.participants.filter(pp => pp.selected).length)
+          : p.amount
+      })),
+      receipt: null,
+      splitType: expenseData.splitType,
+      createdAt: new Date().toISOString(),
+      createdBy: { id: 1, name: "You", avatar: "Y" }
+    };
+
+    setExpenses(prev => [newExpense, ...prev]);
+    setShowAddExpenseModal(false);
+    toast.success('Expense added successfully!');
+  };
+
+  const handleEditExpense = (expenseData) => {
+    const updatedExpense = {
+      ...selectedExpense,
+      title: expenseData.title,
+      amount: parseFloat(expenseData.amount),
+      paidBy: group.members.find(m => m.id.toString() === expenseData.paidBy)?.name || "You",
+      paidById: parseInt(expenseData.paidBy),
+      splitBetween: expenseData.participants.filter(p => p.selected).length,
+      category: expenseData.category,
+      date: expenseData.date,
+      description: expenseData.description,
+      participants: expenseData.participants.filter(p => p.selected).map(p => ({
+        ...p,
+        amount: expenseData.splitType === 'equal' 
+          ? Math.round(parseFloat(expenseData.amount) / expenseData.participants.filter(pp => pp.selected).length)
+          : p.amount
+      })),
+      splitType: expenseData.splitType,
+      updatedAt: new Date().toISOString()
+    };
+
+    setExpenses(prev => prev.map(exp => exp.id === selectedExpense.id ? updatedExpense : exp));
+    setShowEditExpenseModal(false);
+    setSelectedExpense(null);
+    toast.success('Expense updated successfully!');
+  };
+
+  const handleDeleteExpense = (expenseId) => {
+    setExpenses(prev => prev.filter(exp => exp.id !== expenseId));
+    toast.success('Expense deleted successfully!');
+  };
+
   const handleViewExpenseDetail = (expense) => {
     setSelectedExpense(expense);
     setShowExpenseDetailModal(true);
+  };
+
+  const handleEditExpenseClick = (expense) => {
+    setSelectedExpense(expense);
+    setShowEditExpenseModal(true);
   };
 
   const handleKickMember = (member) => {
@@ -139,7 +204,7 @@ const GroupOverview = () => {
 
   const copyInviteCode = () => {
     navigator.clipboard.writeText(group.inviteCode);
-    // Show toast notification
+    toast.success('Invite code copied to clipboard!');
   };
 
   const renderExpensesTab = () => (
@@ -219,18 +284,31 @@ const GroupOverview = () => {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <div className="text-xl font-bold text-[#00FF84]">₹{expense.amount}</div>
+                    <div className="text-xl font-bold text-[#00FF84]">₹{expense.amount.toLocaleString()}</div>
                     <div className="text-sm text-gray-400">₹{Math.round(expense.amount / expense.splitBetween)} per person</div>
                   </div>
-                  <motion.button
-                    onClick={() => handleViewExpenseDetail(expense)}
-                    className="flex items-center px-3 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Eye className="w-4 h-4 mr-1" />
-                    View Details
-                  </motion.button>
+                  <div className="flex gap-2">
+                    <motion.button
+                      onClick={() => handleViewExpenseDetail(expense)}
+                      className="flex items-center px-3 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      View
+                    </motion.button>
+                    {(group.role === 'Owner' || expense.createdBy.id === 1) && (
+                      <motion.button
+                        onClick={() => handleEditExpenseClick(expense)}
+                        className="flex items-center px-3 py-2 bg-[#00FF84]/20 text-[#00FF84] rounded-lg hover:bg-[#00FF84]/30 transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Edit3 className="w-4 h-4 mr-1" />
+                        Edit
+                      </motion.button>
+                    )}
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -239,7 +317,23 @@ const GroupOverview = () => {
           <div className="text-center py-12">
             <Receipt className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-300 mb-2">No expenses found</h3>
-            <p className="text-gray-500">Try adjusting your search or filters</p>
+            <p className="text-gray-500 mb-4">
+              {searchTerm || filterCategory !== 'All' || filterMember !== 'All'
+                ? 'Try adjusting your search or filters'
+                : 'Start by adding your first expense'
+              }
+            </p>
+            {!searchTerm && filterCategory === 'All' && filterMember === 'All' && (
+              <motion.button
+                onClick={() => setShowAddExpenseModal(true)}
+                className="flex items-center px-4 py-2 bg-gradient-to-r from-[#00FF84] to-[#00C97F] text-black font-semibold rounded-xl hover:shadow-lg hover:shadow-[#00FF84]/30 transition-all duration-300 mx-auto"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add First Expense
+              </motion.button>
+            )}
           </div>
         )}
       </div>
@@ -479,18 +573,16 @@ const GroupOverview = () => {
       <div className="bg-gradient-to-br from-gray-900/60 to-gray-800/60 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
         <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
         <div className="space-y-3">
-          {[
-            { action: "Expense added", user: "You", details: "Hotel Booking - ₹12,000", time: "2h ago" },
-            { action: "Member joined", user: "Kavya Singh", details: "Joined the group", time: "1d ago" },
-            { action: "Expense added", user: "Priya Sharma", details: "Flight Tickets - ₹8,400", time: "2d ago" }
-          ].map((log, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+          {expenses.slice(0, 3).map((expense, index) => (
+            <div key={expense.id} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
               <div>
-                <span className="text-white font-medium">{log.action}</span>
-                <span className="text-gray-400 ml-2">by {log.user}</span>
-                <p className="text-sm text-gray-500">{log.details}</p>
+                <span className="text-white font-medium">Expense added</span>
+                <span className="text-gray-400 ml-2">by {expense.paidBy}</span>
+                <p className="text-sm text-gray-500">{expense.title} - ₹{expense.amount.toLocaleString()}</p>
               </div>
-              <span className="text-xs text-gray-500">{log.time}</span>
+              <span className="text-xs text-gray-500">
+                {new Date(expense.createdAt).toLocaleDateString()}
+              </span>
             </div>
           ))}
         </div>
@@ -584,11 +676,27 @@ const GroupOverview = () => {
         isOpen={showAddExpenseModal}
         onClose={() => setShowAddExpenseModal(false)}
         groupMembers={group.members}
+        onSubmit={handleAddExpense}
+      />
+      
+      <EditExpenseModal 
+        isOpen={showEditExpenseModal}
+        onClose={() => {
+          setShowEditExpenseModal(false);
+          setSelectedExpense(null);
+        }}
+        expense={selectedExpense}
+        groupMembers={group.members}
+        onSubmit={handleEditExpense}
+        onDelete={handleDeleteExpense}
       />
       
       <ExpenseDetailModal 
         isOpen={showExpenseDetailModal}
-        onClose={() => setShowExpenseDetailModal(false)}
+        onClose={() => {
+          setShowExpenseDetailModal(false);
+          setSelectedExpense(null);
+        }}
         expense={selectedExpense}
       />
       
