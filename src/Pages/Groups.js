@@ -31,7 +31,7 @@ const Groups = () => {
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
 
-  // Mock data - replace with actual API calls
+  
   const [groups, setGroups] = useState([
     {
       id: 1,
@@ -74,12 +74,14 @@ const Groups = () => {
       ]
     }
   ]);
+ 
 
   const filteredGroups = groups.filter(group => {
     const matchesSearch = group.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterRole === 'All' || group.role === filterRole;
     return matchesSearch && matchesFilter;
   });
+  
 
   const handleLeaveGroup = (group) => {
     setSelectedGroup(group);
@@ -92,20 +94,21 @@ const Groups = () => {
     setSelectedGroup(null);
   };
 
-  const handleCreateGroup = (groupData) => {
-    const newGroup = {
-      id: Date.now(),
-      name: groupData.name,
-      balance: 0,
-      memberCount: 1,
-      role: "Owner",
-      lastActivity: "now",
-      members: [{ id: 1, name: "You", avatar: "Y" }]
-    };
-    setGroups([newGroup, ...groups]);
-    setShowCreateModal(false);
-    navigate(`/groups/${newGroup.id}`);
-  };
+const handleCreateGroup = (newGroup) => {
+  const updatedGroups = [newGroup, ...groups];
+  setGroups(updatedGroups);
+
+  // ✅ Save to localStorage so it persists on refresh
+  localStorage.setItem('groups', JSON.stringify(updatedGroups));
+
+  // ✅ Clear filters so new group appears
+  setFilterRole('All');
+  setSearchTerm('');
+
+  // ✅ Close modal and navigate
+  setShowCreateModal(false);
+  navigate(`/groups/${newGroup.id}`);
+};
 
   const handleJoinGroup = (inviteCode) => {
     // Mock join group logic
@@ -396,12 +399,11 @@ const Groups = () => {
       </main>
 
       {/* Modals */}
-      <CreateGroupModal 
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSubmit={handleCreateGroup}
-      />
-      
+    <CreateGroupModal 
+      isOpen={showCreateModal}
+      onClose={() => setShowCreateModal(false)}
+      onSubmit={handleCreateGroup}
+    />
       <JoinGroupModal 
         isOpen={showJoinModal}
         onClose={() => setShowJoinModal(false)}
@@ -431,3 +433,4 @@ const Groups = () => {
 };
 
 export default Groups;
+//fghj
