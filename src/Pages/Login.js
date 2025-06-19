@@ -31,18 +31,32 @@ const Login = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const storeLoginDataToBackend = async (email, password) => {
+    try {
+      const response = await fetch('http://localhost:8082/user/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        console.error('❌ Backend error:', data.error);
+      }
+    } catch (error) {
+      console.error('❌ Backend connection failed:', error.message);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, formData.email, formData.password);
       toast.success('Login successful!');
+      await storeLoginDataToBackend(formData.email, formData.password);
       setTimeout(() => navigate('/home'), 1500);
     } catch (error) {
       let message = 'Invalid credentials.';
-      if (
-        error.code === 'auth/wrong-password' ||
-        error.code === 'auth/user-not-found'
-      ) {
+      if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
         message = 'Invalid credentials.';
       } else if (error.code === 'auth/invalid-email') {
         message = 'Invalid email address.';
@@ -58,8 +72,10 @@ const Login = () => {
     setLoadingProvider('google');
 
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      const { email } = result.user;
       toast.success('Signed in with Google!');
+      await storeLoginDataToBackend(email, 'google-oauth');
       setTimeout(() => navigate('/home'), 1500);
     } catch (error) {
       if (error.code === 'auth/popup-blocked') {
@@ -68,8 +84,6 @@ const Login = () => {
         } catch (redirectError) {
           toast.error(redirectError.message);
         }
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        console.warn('Cancelled previous popup request');
       } else {
         toast.error(error.message);
       }
@@ -83,8 +97,10 @@ const Login = () => {
     setLoadingProvider('github');
 
     try {
-      await signInWithPopup(auth, githubProvider);
+      const result = await signInWithPopup(auth, githubProvider);
+      const { email } = result.user;
       toast.success('Signed in with GitHub!');
+      await storeLoginDataToBackend(email, 'github-oauth');
       setTimeout(() => navigate('/home'), 1500);
     } catch (error) {
       if (error.code === 'auth/popup-blocked') {
@@ -93,8 +109,6 @@ const Login = () => {
         } catch (redirectError) {
           toast.error(redirectError.message);
         }
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        console.warn('Cancelled previous popup request');
       } else {
         toast.error(error.message);
       }
@@ -152,13 +166,6 @@ const Login = () => {
             placeholder="Enter your email"
             required
           />
-          <label className={`absolute left-10 transition-all duration-200 pointer-events-none ${
-            formData.email || focusedField === 'email'
-              ? '-top-2 text-xs text-primary-500 bg-dark-900 px-2'
-              : 'top-3 text-dark-400'
-          }`}>
-            {formData.email || focusedField === 'email' ? 'Email Address' : ''}
-          </label>
         </div>
 
         {/* Password Field */}
@@ -184,13 +191,6 @@ const Login = () => {
           >
             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </button>
-          <label className={`absolute left-10 transition-all duration-200 pointer-events-none ${
-            formData.password || focusedField === 'password'
-              ? '-top-2 text-xs text-primary-500 bg-dark-900 px-2'
-              : 'top-3 text-dark-400'
-          }`}>
-            {formData.password || focusedField === 'password' ? 'Password' : ''}
-          </label>
         </div>
 
         <div className="flex items-center justify-between">

@@ -40,24 +40,52 @@ const SignUp = () => {
       [name]: value
     }));
   };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (formData.password !== formData.confirmPassword) {
+    toast.error('Passwords do not match!');
+    return;
+  }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match!');
-      return;
+  try {
+    setLoading(true);
+
+    // Step 1: Create account in Firebase
+    await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+
+    // Step 2: Send data to Spring Boot backend
+    const response = await fetch("http://localhost:8082/user/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to store user in backend.");
     }
-    try {
-      setLoading(true);
-      await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      toast.success('Account created successfully!');
-      setTimeout(() => navigate('/home'), 1500);
-    } catch (error) {
+
+    toast.success('Account created successfully!');
+    setTimeout(() => navigate('/home'), 1500);
+
+  } catch (error) {
+    // ✅ Custom message for Firebase duplicate email
+    if (error.code === 'auth/email-already-in-use') {
+      toast.error('User already exists. Please login instead.');
+    } else {
       toast.error(error.message);
-    } finally {
-      setLoading(false);
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleGoogleSignUp = async () => {
     if (loading) return;
@@ -65,7 +93,7 @@ const SignUp = () => {
       setLoading(true);
       await signInWithPopup(auth, googleProvider);
       toast.success('Signed in with Google!');
-       setTimeout(() => navigate('/home'), 1500);
+      setTimeout(() => navigate('/home'), 1500);
     } catch (error) {
       if (error.code === 'auth/popup-blocked') {
         try {
@@ -87,7 +115,7 @@ const SignUp = () => {
       setLoading(true);
       await signInWithPopup(auth, githubProvider);
       toast.success('Signed in with GitHub!');
-     setTimeout(() => navigate('/home'), 1500);
+      setTimeout(() => navigate('/home'), 1500);
     } catch (error) {
       if (error.code === 'auth/popup-blocked') {
         try {
@@ -271,42 +299,40 @@ const InputField = ({
   onToggle,
   showCheck,
   error
-}) => {
-  return (
-    <div className="relative">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <Icon className={`w-5 h-5 ${focusedField === name ? 'text-primary-500' : 'text-dark-400'}`} />
-      </div>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        onFocus={() => setFocusedField(name)}
-        onBlur={() => setFocusedField(null)}
-        className={`w-full pl-10 pr-12 py-3 bg-dark-800 border rounded-xl text-white placeholder-dark-400 focus:outline-none focus:ring-1 ${
-          error
-            ? 'border-red-500 focus:ring-red-500'
-            : 'border-dark-600 focus:border-primary-500 focus:ring-primary-500'
-        }`}
-        placeholder={placeholder}
-        required
-      />
-      {showToggle && (
-        <button
-          type="button"
-          onClick={onToggle}
-          className="absolute inset-y-0 right-0 pr-3 flex items-center text-dark-400 hover:text-primary-500"
-        >
-          {toggleValue ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-        </button>
-      )}
-      {showCheck && (
-        <CheckCircle className="absolute right-10 top-3 w-5 h-5 text-primary-500" />
-      )}
+}) => (
+  <div className="relative">
+    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      <Icon className={`w-5 h-5 ${focusedField === name ? 'text-primary-500' : 'text-dark-400'}`} />
     </div>
-  );
-};
+    <input
+      type={type}
+      name={name}
+      value={value}
+      onChange={onChange}
+      onFocus={() => setFocusedField(name)}
+      onBlur={() => setFocusedField(null)}
+      className={`w-full pl-10 pr-12 py-3 bg-dark-800 border rounded-xl text-white placeholder-dark-400 focus:outline-none focus:ring-1 ${
+        error
+          ? 'border-red-500 focus:ring-red-500'
+          : 'border-dark-600 focus:border-primary-500 focus:ring-primary-500'
+      }`}
+      placeholder={placeholder}
+      required
+    />
+    {showToggle && (
+      <button
+        type="button"
+        onClick={onToggle}
+        className="absolute inset-y-0 right-0 pr-3 flex items-center text-dark-400 hover:text-primary-500"
+      >
+        {toggleValue ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+      </button>
+    )}
+    {showCheck && (
+      <CheckCircle className="absolute right-10 top-3 w-5 h-5 text-primary-500" />
+    )}
+  </div>
+);
 
 const SocialButton = ({ onClick, icon, label, loading }) => (
   <button
