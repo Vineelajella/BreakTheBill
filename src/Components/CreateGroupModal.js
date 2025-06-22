@@ -15,11 +15,33 @@ const CreateGroupModal = ({ isOpen, onClose, onSubmit }) => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    onSubmit({ name: groupName.trim() });
+    // Create new group object with proper structure
+    const newGroup = {
+      id: Date.now(), // Generate unique ID
+      name: groupName.trim(),
+      balance: 0,
+      memberCount: 1, // Start with just the creator
+      role: "Owner",
+      lastActivity: "now",
+      inviteCode: generateInviteCode(),
+      members: [
+        { id: 1, name: "You", email: "you@example.com", avatar: "Y", role: "Owner", balance: 0 }
+      ]
+    };
+    
+    onSubmit(newGroup);
     setGroupName('');
     setIsSubmitting(false);
   };
-  ///fghj
+
+  const generateInviteCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
 
   const handleClose = () => {
     if (!isSubmitting) {

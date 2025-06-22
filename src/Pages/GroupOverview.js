@@ -1,6 +1,6 @@
 // group overview page
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, 
@@ -57,23 +57,97 @@ const GroupOverview = () => {
   const [showDeleteGroupModal, setShowDeleteGroupModal] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
+  const [group, setGroup] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data - replace with actual API calls
-  const group = {
-    id: groupId,
-    name: "Goa Trip 2025",
-    balance: -1250,
-    memberCount: 6,
-    role: "Owner",
-    inviteCode: "GOA2025",
-    members: [
-      { id: 1, name: "You", email: "you@example.com", avatar: "Y", role: "Owner", balance: -1250 },
-      { id: 2, name: "Priya Sharma", email: "priya@example.com", avatar: "P", role: "Member", balance: 850 },
-      { id: 3, name: "Arjun Patel", email: "arjun@example.com", avatar: "A", role: "Member", balance: -320 },
-      { id: 4, name: "Sneha Reddy", email: "sneha@example.com", avatar: "S", role: "Member", balance: 720 },
-      { id: 5, name: "Rahul Kumar", email: "rahul@example.com", avatar: "R", role: "Member", balance: 0 },
-      { id: 6, name: "Kavya Singh", email: "kavya@example.com", avatar: "K", role: "Member", balance: 0 }
-    ]
+  // Load group data based on groupId
+  useEffect(() => {
+    const loadGroupData = () => {
+      try {
+        const savedGroups = localStorage.getItem('groups');
+        if (savedGroups) {
+          const groups = JSON.parse(savedGroups);
+          const currentGroup = groups.find(g => g.id.toString() === groupId);
+          
+          if (currentGroup) {
+            setGroup(currentGroup);
+          } else {
+            // Fallback to mock data if group not found
+            setGroup(getMockGroupData(groupId));
+          }
+        } else {
+          // Use mock data if no saved groups
+          setGroup(getMockGroupData(groupId));
+        }
+      } catch (error) {
+        console.error('Error loading group data:', error);
+        setGroup(getMockGroupData(groupId));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadGroupData();
+  }, [groupId]);
+
+  // Mock data function for fallback
+  const getMockGroupData = (id) => {
+    const mockGroups = {
+      '1': {
+        id: 1,
+        name: "Goa Trip 2025",
+        balance: -1250,
+        memberCount: 6,
+        role: "Owner",
+        inviteCode: "GOA2025",
+        members: [
+          { id: 1, name: "You", email: "you@example.com", avatar: "Y", role: "Owner", balance: -1250 },
+          { id: 2, name: "Priya Sharma", email: "priya@example.com", avatar: "P", role: "Member", balance: 850 },
+          { id: 3, name: "Arjun Patel", email: "arjun@example.com", avatar: "A", role: "Member", balance: -320 },
+          { id: 4, name: "Sneha Reddy", email: "sneha@example.com", avatar: "S", role: "Member", balance: 720 },
+          { id: 5, name: "Rahul Kumar", email: "rahul@example.com", avatar: "R", role: "Member", balance: 0 },
+          { id: 6, name: "Kavya Singh", email: "kavya@example.com", avatar: "K", role: "Member", balance: 0 }
+        ]
+      },
+      '2': {
+        id: 2,
+        name: "Flatmates - Koramangala",
+        balance: 850,
+        memberCount: 4,
+        role: "Member",
+        inviteCode: "FLAT01",
+        members: [
+          { id: 1, name: "Rahul", avatar: "R", email: "rahul@example.com", role: "Owner", balance: 0 },
+          { id: 2, name: "You", avatar: "Y", email: "you@example.com", role: "Member", balance: 850 },
+          { id: 3, name: "Kavya", avatar: "K", email: "kavya@example.com", role: "Member", balance: 0 },
+          { id: 4, name: "Dev", avatar: "D", email: "dev@example.com", role: "Member", balance: 0 }
+        ]
+      },
+      '3': {
+        id: 3,
+        name: "Office Lunch Group",
+        balance: -320,
+        memberCount: 8,
+        role: "Member",
+        inviteCode: "LUNCH8",
+        members: [
+          { id: 1, name: "Team Lead", avatar: "T", email: "lead@example.com", role: "Owner", balance: 0 },
+          { id: 2, name: "You", avatar: "Y", email: "you@example.com", role: "Member", balance: -320 }
+        ]
+      }
+    };
+
+    return mockGroups[id] || {
+      id: parseInt(id),
+      name: "Unknown Group",
+      balance: 0,
+      memberCount: 1,
+      role: "Member",
+      inviteCode: "UNKNOWN",
+      members: [
+        { id: 1, name: "You", email: "you@example.com", avatar: "Y", role: "Member", balance: 0 }
+      ]
+    };
   };
 
   const [expenses, setExpenses] = useState([
@@ -87,7 +161,7 @@ const GroupOverview = () => {
       category: "Accommodation",
       date: "2025-01-15",
       description: "3 nights stay at Taj Resort, Goa",
-      participants: group.members.map(m => ({ ...m, selected: true, amount: 2000 })),
+      participants: [],
       receipt: null,
       splitType: 'equal',
       createdAt: new Date().toISOString(),
@@ -103,7 +177,7 @@ const GroupOverview = () => {
       category: "Transport",
       date: "2025-01-14",
       description: "Round trip flights for all members",
-      participants: group.members.map(m => ({ ...m, selected: true, amount: 1400 })),
+      participants: [],
       receipt: null,
       splitType: 'equal',
       createdAt: new Date().toISOString(),
@@ -124,7 +198,7 @@ const GroupOverview = () => {
     { id: 'expenses', label: 'Expenses', icon: Receipt },
     { id: 'members', label: 'Members', icon: Users },
     { id: 'summary', label: 'Summary', icon: BarChart3 },
-    ...(group.role === 'Owner' ? [{ id: 'admin', label: 'Admin', icon: Settings }] : [])
+    ...(group?.role === 'Owner' ? [{ id: 'admin', label: 'Admin', icon: Settings }] : [])
   ];
 
   const handleAddExpense = (expenseData) => {
@@ -206,6 +280,34 @@ const GroupOverview = () => {
     navigator.clipboard.writeText(group.inviteCode);
     toast.success('Invite code copied to clipboard!');
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#00FF84] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading group...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!group) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Group Not Found</h2>
+          <p className="text-gray-400 mb-6">The group you're looking for doesn't exist.</p>
+          <button
+            onClick={() => navigate('/groups')}
+            className="px-6 py-3 bg-gradient-to-r from-[#00FF84] to-[#00C97F] text-black font-semibold rounded-xl"
+          >
+            Back to Groups
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const renderExpensesTab = () => (
     <div className="space-y-6">
@@ -734,4 +836,3 @@ const GroupOverview = () => {
 };
 
 export default GroupOverview;
-//fghj

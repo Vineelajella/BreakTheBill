@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Users, 
-  Plus, 
-  UserPlus, 
-  Search, 
-  Filter, 
-  Crown, 
+import {
+  Users,
+  Plus,
+  UserPlus,
+  Search,
+  Filter,
+  Crown,
   User,
   Calendar,
   TrendingUp,
@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router-dom';
 import CreateGroupModal from '../Components/CreateGroupModal';
 import JoinGroupModal from '../Components/JoinGroupModal';
 import LeaveGroupModal from '../Components/LeaveGroupModal';
+import { toast } from 'react-toastify';
 
 const Groups = () => {
   const navigate = useNavigate();
@@ -31,57 +32,75 @@ const Groups = () => {
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
 
-  
-  const [groups, setGroups] = useState([
-    {
-      id: 1,
-      name: "Goa Trip 2025",
-      balance: -1250,
-      memberCount: 6,
-      role: "Owner",
-      lastActivity: "2h ago",
-      members: [
-        { id: 1, name: "You", avatar: "Y" },
-        { id: 2, name: "Priya", avatar: "P" },
-        { id: 3, name: "Arjun", avatar: "A" },
-        { id: 4, name: "Sneha", avatar: "S" }
-      ]
-    },
-    {
-      id: 2,
-      name: "Flatmates - Koramangala",
-      balance: 850,
-      memberCount: 4,
-      role: "Member",
-      lastActivity: "1d ago",
-      members: [
-        { id: 1, name: "Rahul", avatar: "R" },
-        { id: 2, name: "You", avatar: "Y" },
-        { id: 3, name: "Kavya", avatar: "K" },
-        { id: 4, name: "Dev", avatar: "D" }
-      ]
-    },
-    {
-      id: 3,
-      name: "Office Lunch Group",
-      balance: -320,
-      memberCount: 8,
-      role: "Member",
-      lastActivity: "3d ago",
-      members: [
-        { id: 1, name: "Team", avatar: "T" },
-        { id: 2, name: "You", avatar: "Y" }
-      ]
+  // Initialize groups from localStorage or use default data
+  const [groups, setGroups] = useState(() => {
+    const savedGroups = localStorage.getItem('groups');
+    if (savedGroups) {
+      try {
+        return JSON.parse(savedGroups);
+      } catch (error) {
+        console.error('Error parsing saved groups:', error);
+      }
     }
-  ]);
- 
+
+    // Default groups if no saved data
+    return [
+      {
+        id: 1,
+        name: "Goa Trip 2025",
+        balance: -1250,
+        memberCount: 6,
+        role: "Owner",
+        lastActivity: "2h ago",
+        inviteCode: "GOA2025",
+        members: [
+          { id: 1, name: "You", avatar: "Y", email: "you@example.com", role: "Owner", balance: -1250 },
+          { id: 2, name: "Priya", avatar: "P", email: "priya@example.com", role: "Member", balance: 850 },
+          { id: 3, name: "Arjun", avatar: "A", email: "arjun@example.com", role: "Member", balance: -320 },
+          { id: 4, name: "Sneha", avatar: "S", email: "sneha@example.com", role: "Member", balance: 720 }
+        ]
+      },
+      {
+        id: 2,
+        name: "Flatmates - Koramangala",
+        balance: 850,
+        memberCount: 4,
+        role: "Member",
+        lastActivity: "1d ago",
+        inviteCode: "FLAT01",
+        members: [
+          { id: 1, name: "Rahul", avatar: "R", email: "rahul@example.com", role: "Owner", balance: 0 },
+          { id: 2, name: "You", avatar: "Y", email: "you@example.com", role: "Member", balance: 850 },
+          { id: 3, name: "Kavya", avatar: "K", email: "kavya@example.com", role: "Member", balance: 0 },
+          { id: 4, name: "Dev", avatar: "D", email: "dev@example.com", role: "Member", balance: 0 }
+        ]
+      },
+      {
+        id: 3,
+        name: "Office Lunch Group",
+        balance: -320,
+        memberCount: 8,
+        role: "Member",
+        lastActivity: "3d ago",
+        inviteCode: "LUNCH8",
+        members: [
+          { id: 1, name: "Team Lead", avatar: "T", email: "lead@example.com", role: "Owner", balance: 0 },
+          { id: 2, name: "You", avatar: "Y", email: "you@example.com", role: "Member", balance: -320 }
+        ]
+      }
+    ];
+  });
+
+  // Save groups to localStorage whenever groups state changes
+  useEffect(() => {
+    localStorage.setItem('groups', JSON.stringify(groups));
+  }, [groups]);
 
   const filteredGroups = groups.filter(group => {
     const matchesSearch = group.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterRole === 'All' || group.role === filterRole;
     return matchesSearch && matchesFilter;
   });
-  
 
   const handleLeaveGroup = (group) => {
     setSelectedGroup(group);
@@ -89,29 +108,33 @@ const Groups = () => {
   };
 
   const confirmLeaveGroup = () => {
-    setGroups(groups.filter(g => g.id !== selectedGroup.id));
+    const updatedGroups = groups.filter(g => g.id !== selectedGroup.id);
+    setGroups(updatedGroups);
     setShowLeaveModal(false);
     setSelectedGroup(null);
+    toast.success(`Left ${selectedGroup.name} successfully!`);
   };
 
-const handleCreateGroup = (newGroup) => {
-  const updatedGroups = [newGroup, ...groups];
-  setGroups(updatedGroups);
+  const handleCreateGroup = (newGroup) => {
+    const updatedGroups = [newGroup, ...groups];
+    setGroups(updatedGroups);
 
-  // ✅ Save to localStorage so it persists on refresh
-  localStorage.setItem('groups', JSON.stringify(updatedGroups));
+    // Clear filters so new group appears
+    setFilterRole('All');
+    setSearchTerm('');
 
-  // ✅ Clear filters so new group appears
-  setFilterRole('All');
-  setSearchTerm('');
+    // Close modal and show success message
+    setShowCreateModal(false);
+    toast.success(`Group "${newGroup.name}" created successfully!`);
 
-  // ✅ Close modal and navigate
-  setShowCreateModal(false);
-  navigate(`/groups/${newGroup.id}`);
-};
+    // Navigate to the new group
+    setTimeout(() => {
+      navigate(`/groups/${newGroup.id}`);
+    }, 1000);
+  };
 
   const handleJoinGroup = (inviteCode) => {
-    // Mock join group logic
+    // Mock join group logic - in real app, this would call an API
     const newGroup = {
       id: Date.now(),
       name: `Group ${inviteCode}`,
@@ -119,13 +142,22 @@ const handleCreateGroup = (newGroup) => {
       memberCount: 3,
       role: "Member",
       lastActivity: "now",
+      inviteCode: inviteCode,
       members: [
-        { id: 1, name: "Owner", avatar: "O" },
-        { id: 2, name: "You", avatar: "Y" }
+        { id: 1, name: "Group Owner", avatar: "O", email: "owner@example.com", role: "Owner", balance: 0 },
+        { id: 2, name: "You", avatar: "Y", email: "you@example.com", role: "Member", balance: 0 }
       ]
     };
-    setGroups([newGroup, ...groups]);
+
+    const updatedGroups = [newGroup, ...groups];
+    setGroups(updatedGroups);
     setShowJoinModal(false);
+    toast.success(`Joined group successfully!`);
+  };
+
+  const handleGroupClick = (group) => {
+    // Navigate to the specific group using its actual ID
+    navigate(`/groups/${group.id}`);
   };
 
   return (
@@ -144,7 +176,7 @@ const handleCreateGroup = (newGroup) => {
 
             {/* Navigation */}
             <nav className="hidden md:flex space-x-8">
-              <button 
+              <button
                 onClick={() => navigate('/home')}
                 className="flex items-center text-gray-300 hover:text-[#00FF84] transition-colors"
               >
@@ -186,7 +218,7 @@ const handleCreateGroup = (newGroup) => {
             <h2 className="text-3xl font-bold mb-2">My Groups</h2>
             <p className="text-gray-400">Manage your expense groups and track balances</p>
           </div>
-          
+
           {/* Action Buttons */}
           <div className="flex space-x-3 mt-4 sm:mt-0">
             <motion.button
@@ -238,7 +270,7 @@ const handleCreateGroup = (newGroup) => {
 
         {/* Groups Grid */}
         {filteredGroups.length > 0 ? (
-          <motion.div 
+          <motion.div
             className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -256,12 +288,12 @@ const handleCreateGroup = (newGroup) => {
                 >
                   <motion.div
                     className="bg-gradient-to-br from-gray-900/60 to-gray-800/60 backdrop-blur-sm border border-gray-700 rounded-2xl p-6 hover:border-[#00FF84] transition-all duration-300 h-full cursor-pointer"
-                    whileHover={{ 
-                      scale: 1.02, 
+                    whileHover={{
+                      scale: 1.02,
                       boxShadow: "0 10px 40px rgba(0, 255, 132, 0.1)",
                       y: -5
                     }}
-                    onClick={() => navigate(`/groups/${group.id}`)}
+                    onClick={() => handleGroupClick(group)}
                   >
                     {/* Group Header */}
                     <div className="flex items-start justify-between mb-4">
@@ -276,11 +308,10 @@ const handleCreateGroup = (newGroup) => {
                             ) : (
                               <User className="w-4 h-4 text-gray-400 mr-1" />
                             )}
-                            <span className={`text-xs px-2 py-1 rounded-full ${
-                              group.role === 'Owner' 
-                                ? 'bg-[#00FF84]/20 text-[#00FF84]' 
+                            <span className={`text-xs px-2 py-1 rounded-full ${group.role === 'Owner'
+                                ? 'bg-[#00FF84]/20 text-[#00FF84]'
                                 : 'bg-gray-700 text-gray-300'
-                            }`}>
+                              }`}>
                               {group.role}
                             </span>
                           </div>
@@ -326,7 +357,7 @@ const handleCreateGroup = (newGroup) => {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center">
                         <div className="flex -space-x-2 mr-3">
-                          {group.members.slice(0, 4).map((member, idx) => (
+                          {(group.members || []).slice(0, 4).map((member, idx) => (
                             <div
                               key={idx}
                               className="w-8 h-8 bg-gradient-to-r from-[#00FF84] to-[#00C97F] rounded-full flex items-center justify-center text-black text-xs font-bold border-2 border-gray-800"
@@ -334,6 +365,7 @@ const handleCreateGroup = (newGroup) => {
                               {member.avatar}
                             </div>
                           ))}
+
                           {group.memberCount > 4 && (
                             <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-gray-300 text-xs font-bold border-2 border-gray-800">
                               +{group.memberCount - 4}
@@ -369,7 +401,7 @@ const handleCreateGroup = (newGroup) => {
               {searchTerm || filterRole !== 'All' ? 'No groups found' : "You're not part of any group yet"}
             </h3>
             <p className="text-gray-400 mb-6">
-              {searchTerm || filterRole !== 'All' 
+              {searchTerm || filterRole !== 'All'
                 ? 'Try adjusting your search or filter criteria'
                 : 'Create or join a group to start splitting expenses with friends'
               }
@@ -399,18 +431,19 @@ const handleCreateGroup = (newGroup) => {
       </main>
 
       {/* Modals */}
-    <CreateGroupModal 
-      isOpen={showCreateModal}
-      onClose={() => setShowCreateModal(false)}
-      onSubmit={handleCreateGroup}
-    />
-      <JoinGroupModal 
+      <CreateGroupModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={handleCreateGroup}
+      />
+
+      <JoinGroupModal
         isOpen={showJoinModal}
         onClose={() => setShowJoinModal(false)}
         onSubmit={handleJoinGroup}
       />
-      
-      <LeaveGroupModal 
+
+      <LeaveGroupModal
         isOpen={showLeaveModal}
         onClose={() => setShowLeaveModal(false)}
         onConfirm={confirmLeaveGroup}
@@ -433,4 +466,3 @@ const handleCreateGroup = (newGroup) => {
 };
 
 export default Groups;
-//fghj
